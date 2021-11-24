@@ -69,6 +69,8 @@ class PendingFragment : Fragment(), TaskListener {
                 tasks.forEach {
                     if (!it.date.contains(formattedDate) && !it.isCompleted) {
                         todayTasks.add(it)
+                        binding.todayRecyclerView.visibility = View.VISIBLE
+                        binding.textStatus.visibility = View.GONE
                     }
                 }
                 taskAdapter = TaskAdapter(todayTasks, 2, this)

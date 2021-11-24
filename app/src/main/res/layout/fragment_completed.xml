@@ -7,10 +7,23 @@
     android:background="@color/colorPrimary"
     tools:context=".fragments.CompletedFragment">
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="No Task Completed"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:id="@+id/textStatus"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:textSize="@dimen/_15sdp"
+        android:textColor="@color/white"
+        />
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/completedRecyclerView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:visibility="gone"
         android:padding="@dimen/_5sdp"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         tools:listitem="@layout/item_task_layout"

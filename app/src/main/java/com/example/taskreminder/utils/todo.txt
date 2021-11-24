@@ -1,0 +1,4 @@
+
+1. Delete Note.
+2. TextToSpeech in CreateTaskActivity.
+3. Calender Instance Problem.

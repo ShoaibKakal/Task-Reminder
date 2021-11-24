@@ -56,6 +56,8 @@ class CompletedFragment : Fragment(), TaskListener {
                 tasks.forEach {
                     if (it.isCompleted) {
                         completedTasks.add(it)
+                        binding.completedRecyclerView.visibility = View.VISIBLE
+                        binding.textStatus.visibility = View.GONE
                     }
                 }
                 taskAdapter = TaskAdapter(completedTasks,3, this)

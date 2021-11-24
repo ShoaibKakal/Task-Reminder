@@ -2,12 +2,17 @@ package com.example.taskreminder
 
 import android.app.*
 import android.content.Intent
+import androidx.appcompat.app.AlertDialog
 import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Bundle
+import android.speech.tts.TextToSpeech
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -15,7 +20,6 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.taskreminder.database.TaskDatabase
 import com.example.taskreminder.databinding.ActivityCreateTaskBinding
-import com.example.taskreminder.listeners.TaskListener
 import com.example.taskreminder.model.TaskModel
 import com.example.taskreminder.service.AlarmReceiver
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -40,7 +44,7 @@ class CreateTaskActivity : AppCompatActivity() {
     private lateinit var calendar: Calendar
     private lateinit var alarmManager: AlarmManager
     private lateinit var pendingIntent: PendingIntent
-    private lateinit var  layoutMiscellaneous : LinearLayout
+    private lateinit var layoutMiscellaneous: LinearLayout
 
     private var viewSubtitleIndicator: View? = null
     private val layoutWebURL: LinearLayout? = null
@@ -48,10 +52,10 @@ class CreateTaskActivity : AppCompatActivity() {
     private var selectedNoteColor: String? = null
     private var switchVoiceSpeech: SwitchMaterial? = null
     private var switchMarkDone: SwitchMaterial? = null
+    private lateinit var textToSpeechSystem: TextToSpeech
 
 
-
-    private val dialogDeleteNote: AlertDialog? = null
+    private var dialogDeleteNote: androidx.appcompat.app.AlertDialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,8 +82,23 @@ class CreateTaskActivity : AppCompatActivity() {
             )
             setViewOrUpdateNote()
 
+            if (alreadyAvailableNote!!.isVoiceReminder) {
+                textToSpeechSystem = TextToSpeech(
+                    this
+                ) { status ->
+                    if (status == TextToSpeech.SUCCESS) {
+                        val textToSay = binding.inputNoteTitle.text.toString()
+                        textToSpeechSystem.speak(textToSay, TextToSpeech.QUEUE_ADD, null)
+                    }
+                }
+            }
+
 
         }
+
+
+        val deleteBtn = layoutMiscellaneous.findViewById<LinearLayout>(R.id.layoutDeleteNote)
+
 
 
         initMiscellaneous()
@@ -88,6 +107,10 @@ class CreateTaskActivity : AppCompatActivity() {
 
 
         ///////////////////////////
+
+        binding.imageBack.setOnClickListener {
+            onBackPressed()
+        }
         binding.inputDate.setOnClickListener {
 
             datePicker()
@@ -102,12 +125,13 @@ class CreateTaskActivity : AppCompatActivity() {
         binding.imageSave.setOnClickListener {
             if (intent.getBooleanExtra("isViewOrUpdate", false)) {
                 updateTask()
-            }else{
+            } else {
                 saveTask()
+                setAlarm()
             }
-            setAlarm()
-//            val intent = Intent(this, MainActivity::class.java)
-//            startActivity(intent)
+
+            val intent = Intent(this, MainActivity::class.java)
+            startActivity(intent)
         }
 
 
@@ -116,7 +140,7 @@ class CreateTaskActivity : AppCompatActivity() {
     private fun updateTask() {
         val title = binding.inputNoteTitle.text.toString()
         val taskDesc = binding.inputNote.text.toString()
-        val date = dateTime
+        val date = "${binding.inputDate.text.toString()} ${binding.inputTime.text.toString()}"
         val category = selectedNoteColor
         val isVoiceSpeech = switchVoiceSpeech!!.isChecked
         val isCompleted = switchMarkDone!!.isChecked
@@ -205,7 +229,7 @@ class CreateTaskActivity : AppCompatActivity() {
         alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
         val intent = Intent(this, AlarmReceiver::class.java)
         intent.putExtra("title", binding.inputNoteTitle.text.toString())
-        intent.putExtra("desc",binding.inputNote.text.toString())
+        intent.putExtra("desc", binding.inputNote.text.toString())
 
         pendingIntent = PendingIntent.getBroadcast(baseContext, 0, intent, Intent.FILL_IN_DATA)
 
@@ -214,7 +238,7 @@ class CreateTaskActivity : AppCompatActivity() {
         )
 
 
-        Toast.makeText(this, "Alarm set successfully",Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Alarm set successfully", Toast.LENGTH_SHORT).show()
 
     }
 
@@ -283,7 +307,7 @@ class CreateTaskActivity : AppCompatActivity() {
             month,
             day
         )
-        dpd.datePicker.setMaxDate(Date().time)
+//        dpd.datePicker.setMaxDate(Date().time)
         dpd.show()
     }
 
@@ -308,6 +332,7 @@ class CreateTaskActivity : AppCompatActivity() {
     fun initMiscellaneous() {
 
         val bottomSheetBehavior = BottomSheetBehavior.from(layoutMiscellaneous)
+
         layoutMiscellaneous.findViewById<View>(R.id.textMiscellaneous).setOnClickListener {
             if (bottomSheetBehavior.state != BottomSheetBehavior.STATE_EXPANDED) {
                 bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED)
@@ -363,16 +388,71 @@ class CreateTaskActivity : AppCompatActivity() {
         }
 
         if (alreadyAvailableNote != null) {
+            Log.d("deleteTag", "already available note called")
+
             layoutMiscellaneous.findViewById<View>(R.id.layoutDeleteNote).visibility =
                 View.VISIBLE
             layoutMiscellaneous.findViewById<View>(R.id.layoutDeleteNote).setOnClickListener {
                 bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
 
-                //todo:
-//                showDeleteNoteDialog()
+
+                if (alreadyAvailableNote != null) {
+                    layoutMiscellaneous.findViewById<View>(R.id.layoutDeleteNote).visibility =
+                        View.VISIBLE
+                    layoutMiscellaneous.findViewById<View>(R.id.layoutDeleteNote)
+                        .setOnClickListener {
+                            bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
+                            Log.d("deleteTag", "Delete called")
+//                            showDeleteNoteDialog()
+                            GlobalScope.launch {
+                                alreadyAvailableNote?.let { it1 ->
+                                    TaskDatabase.getDatabase(applicationContext)
+                                        .taskDao()
+                                        .deleteTask(it1)
+                                }
+                            }
+
+                            val intent = Intent(this, MainActivity::class.java)
+                            startActivity(intent)
+                            finish()
+                        }
+                }
             }
         }
     } // ends layoutMiscellaneous
+
+
+    private fun showDeleteNoteDialog() {
+        if (dialogDeleteNote == null) {
+            Log.d("deleteTag", "showDeleteNoteDialog: not null")
+            val builder = AlertDialog.Builder(this)
+            val view: View = LayoutInflater.from(this).inflate(
+                R.layout.layout_delete_note,
+                findViewById<View>(R.id.layoutDeleteNoteContainer) as ViewGroup,
+                false
+            )
+            builder.setView(view)
+            dialogDeleteNote = builder.create()
+            if (dialogDeleteNote!!.window != null) {
+                dialogDeleteNote!!.window!!.setBackgroundDrawable(ColorDrawable(0))
+            }
+            view.findViewById<View>(R.id.textDeleteNote).setOnClickListener {
+
+                GlobalScope.launch {
+                    alreadyAvailableNote?.let { it1 ->
+                        TaskDatabase.getDatabase(applicationContext)
+                            .taskDao()
+                            .deleteTask(it1)
+                    }
+                }
+            }
+
+
+            view.findViewById<View>(R.id.textCancel)
+                .setOnClickListener { dialogDeleteNote!!.dismiss() }
+        }
+        dialogDeleteNote!!.show()
+    }
 
 
     private fun setSubtitleIndicatorColor() {

@@ -2,10 +2,11 @@
     <!-- Base application theme. -->
     <style name="Theme.TaskReminder" parent="Theme.MaterialComponents.Light.NoActionBar">
 
+
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
-        <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>
+        <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryDark</item>
         <!-- Customize your theme here. -->
     </style>
 </resources>
