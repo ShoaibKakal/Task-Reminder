@@ -8,6 +8,7 @@ import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Bundle
+import android.provider.AlarmClock
 import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.view.LayoutInflater
@@ -39,6 +40,12 @@ class CreateTaskActivity : AppCompatActivity() {
 
     var dateTime: String = ""
 
+    //Alarm realated
+    var mHour = 0
+    var mMinute = 0
+    var title = ""
+
+
     private lateinit var binding: ActivityCreateTaskBinding
     private lateinit var picker: MaterialTimePicker
     private lateinit var calendar: Calendar
@@ -64,6 +71,7 @@ class CreateTaskActivity : AppCompatActivity() {
         layoutMiscellaneous = findViewById<LinearLayout>(R.id.layoutMiscellaneous)
 
         createNotificationChannel()
+        calendar = Calendar.getInstance()
 
         ///////////////////////////
         switchVoiceSpeech = findViewById(R.id.switchSpeech)
@@ -130,8 +138,8 @@ class CreateTaskActivity : AppCompatActivity() {
                 setAlarm()
             }
 
-            val intent = Intent(this, MainActivity::class.java)
-            startActivity(intent)
+//            val intent = Intent(this, MainActivity::class.java)
+//            startActivity(intent)
         }
 
 
@@ -220,6 +228,9 @@ class CreateTaskActivity : AppCompatActivity() {
                     .insertTask(taskModel)
             }
 
+
+            setDeviceAlarm(title)
+
         }
 
     }
@@ -238,7 +249,9 @@ class CreateTaskActivity : AppCompatActivity() {
         )
 
 
-        Toast.makeText(this, "Alarm set successfully", Toast.LENGTH_SHORT).show()
+
+//        Toast.makeText(this, "Alarm set successfully", Toast.LENGTH_SHORT).show()
+
 
     }
 
@@ -272,12 +285,12 @@ class CreateTaskActivity : AppCompatActivity() {
             }
 
 
-            calendar = Calendar.getInstance()
             calendar[Calendar.HOUR_OF_DAY] = picker.hour
             calendar[Calendar.MINUTE] = picker.minute
             calendar[Calendar.SECOND] = 0
             calendar[Calendar.MILLISECOND] = 0
-
+            mHour = picker.hour
+            mMinute = picker.minute
             Log.d("titleTag", "MaterialTimePicker: $dateTime")
             Log.d(
                 "timetag", "Hour: ${picker.hour}\n" +
@@ -403,7 +416,6 @@ class CreateTaskActivity : AppCompatActivity() {
                         .setOnClickListener {
                             bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
                             Log.d("deleteTag", "Delete called")
-//                            showDeleteNoteDialog()
                             GlobalScope.launch {
                                 alreadyAvailableNote?.let { it1 ->
                                     TaskDatabase.getDatabase(applicationContext)
@@ -464,19 +476,27 @@ class CreateTaskActivity : AppCompatActivity() {
     private fun createNotificationChannel() {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-
             val name = "TaskReminderChannelId"
             val description = "ChannelForAlarmManager"
             val importance = NotificationManager.IMPORTANCE_HIGH
-
             val channel = NotificationChannel("myAlarmReminder", name, importance)
             channel.description = description
-
             val notificationManager = getSystemService(NotificationManager::class.java)
             notificationManager.createNotificationChannel(channel)
 
         }
 
+    }
+
+
+    private fun setDeviceAlarm(title:String)
+    {
+        val intent = Intent(AlarmClock.ACTION_SET_ALARM)
+        intent.putExtra(AlarmClock.EXTRA_HOUR, mHour)
+        intent.putExtra(AlarmClock.EXTRA_MINUTES, mMinute)
+        intent.putExtra(AlarmClock.EXTRA_MESSAGE, title)
+        intent.putExtra(AlarmClock.EXTRA_DAYS, mDay)
+        startActivity(intent)
     }
 
 
