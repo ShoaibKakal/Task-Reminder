@@ -2,7 +2,6 @@ package com.example.taskreminder
 
 import android.app.*
 import android.content.Intent
-import androidx.appcompat.app.AlertDialog
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
@@ -18,6 +17,7 @@ import android.view.WindowManager
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.example.taskreminder.database.TaskDatabase
 import com.example.taskreminder.databinding.ActivityCreateTaskBinding
@@ -205,33 +205,34 @@ class CreateTaskActivity : AppCompatActivity() {
         val category = selectedNoteColor
         val isVoiceSpeech = switchVoiceSpeech!!.isChecked
         val isCompleted = switchMarkDone!!.isChecked
-
-
-        if (title.trim().isEmpty()) {
-            Toast.makeText(this, "Task Title can't be empty", Toast.LENGTH_SHORT).show()
-        } else if (taskDesc.trim().isEmpty()) {
-            Toast.makeText(this, "Task Description can't be empty", Toast.LENGTH_SHORT).show()
-        } else {
-
-            val taskModel = TaskModel(
-                title = title,
-                description = taskDesc,
-                date = date,
-                category = category!!,
-                isVoiceReminder = isVoiceSpeech,
-                isCompleted = isCompleted
-            )
-
-            GlobalScope.launch {
-                TaskDatabase.getDatabase(this@CreateTaskActivity)
-                    .taskDao()
-                    .insertTask(taskModel)
-            }
-
-
-            setDeviceAlarm(title)
-
-        }
+//
+//
+//        if (title.trim().isEmpty()) {
+//            Toast.makeText(this, "Task Title can't be empty", Toast.LENGTH_SHORT).show()
+//        } else if (taskDesc.trim().isEmpty()) {
+//            Toast.makeText(this, "Task Description can't be empty", Toast.LENGTH_SHORT).show()
+//        } else {
+//
+//            val taskModel = TaskModel(
+//                title = title,
+//                description = taskDesc,
+//                date = date,
+//                category = category!!,
+//                isVoiceReminder = isVoiceSpeech,
+//                isCompleted = isCompleted
+//            )
+//
+//            GlobalScope.launch {
+//                TaskDatabase.getDatabase(this@CreateTaskActivity)
+//                    .taskDao()
+//                    .insertTask(taskModel)
+//            }
+//
+//
+//            setDeviceAlarm(title)
+//
+//        }
+        dismissDeviceAlarm(title)
 
     }
 
@@ -247,7 +248,6 @@ class CreateTaskActivity : AppCompatActivity() {
         alarmManager.setRepeating(
             AlarmManager.RTC_WAKEUP, calendar.timeInMillis, AlarmManager.INTERVAL_DAY, pendingIntent
         )
-
 
 
 //        Toast.makeText(this, "Alarm set successfully", Toast.LENGTH_SHORT).show()
@@ -489,13 +489,23 @@ class CreateTaskActivity : AppCompatActivity() {
     }
 
 
-    private fun setDeviceAlarm(title:String)
-    {
+    private fun setDeviceAlarm(title: String) {
         val intent = Intent(AlarmClock.ACTION_SET_ALARM)
         intent.putExtra(AlarmClock.EXTRA_HOUR, mHour)
         intent.putExtra(AlarmClock.EXTRA_MINUTES, mMinute)
         intent.putExtra(AlarmClock.EXTRA_MESSAGE, title)
         intent.putExtra(AlarmClock.EXTRA_DAYS, mDay)
+        intent.putExtra(AlarmClock.EXTRA_SKIP_UI, true)
+//        intent.putExtra(AlarmClock.ACTION_DISMISS_ALARM, )
+        startActivity(intent)
+    }
+
+    private fun dismissDeviceAlarm(title: String) {
+        val intent = Intent(AlarmClock.ACTION_DISMISS_ALARM)
+        intent.putExtra(AlarmClock.EXTRA_SKIP_UI, true)
+        intent.putExtra(AlarmClock.EXTRA_ALARM_SEARCH_MODE, AlarmClock.ALARM_SEARCH_MODE_LABEL)
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        intent.putExtra(AlarmClock.EXTRA_MESSAGE, title)
         startActivity(intent)
     }
 
